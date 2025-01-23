@@ -12,6 +12,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/users")
+@CrossOrigin(origins = "http://localhost:3000")
 public class UserController {
 
     private final UserService userService;
@@ -56,5 +57,20 @@ public class UserController {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
     }
+    @PostMapping("/login")
+    public ResponseEntity<String> login(@RequestBody User user) {
+        return userService.findByEmail(user.getEmail())
+                .map(existingUser -> {
+                    if (existingUser.getPassword().equals(user.getPassword())) {
+                        return new ResponseEntity<>("Login successful", HttpStatus.OK);
+                    } else {
+                        return new ResponseEntity<>("Invalid password", HttpStatus.UNAUTHORIZED);
+                    }
+                })
+                .orElse(new ResponseEntity<>("User not found", HttpStatus.NOT_FOUND));
+    }
+
+
+
 }
 
