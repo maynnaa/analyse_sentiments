@@ -6,7 +6,7 @@ import "react-toastify/dist/ReactToastify.css";
 
 const Produits_tableau = ({ searchQuery }) => {
   const [products, setProducts] = useState([]); // État pour stocker les produits
-  const [showModal, setShowModal] = useState(false); // État pour afficher/masquer le modal
+  const [showModal, setShowModal] = useState(false); // État pour afficher/masquer le modal des avis
   const [showEditModal, setShowEditModal] = useState(false); // État pour le modal d'édition
   const [selectedProduct, setSelectedProduct] = useState(null); // Produit sélectionné
   const [selectedProductReviews, setSelectedProductReviews] = useState([]); // Avis du produit sélectionné
@@ -35,15 +35,26 @@ const Produits_tableau = ({ searchQuery }) => {
     }
   };
 
-  const handleShowReviews = (reviews) => {
-    setSelectedProductReviews(reviews);
-    setShowModal(true);
+  const handleShowReviews = async (productId) => {
+    try {
+      const response = await axios.get(`http://localhost:8080/reviews/${productId}`);
+      if (Array.isArray(response.data)) {
+        setSelectedProductReviews(response.data); // Met à jour les avis du produit sélectionné
+      } else {
+        console.warn("Les avis retournés ne sont pas sous forme de tableau");
+        setSelectedProductReviews([]);
+      }
+      setShowModal(true); // Affiche le modal des avis
+    } catch (error) {
+      console.error("Erreur lors de la récupération des avis:", error);
+      toast.error("Une erreur s'est produite lors de la récupération des avis.");
+    }
   };
 
   const handleCloseModal = () => setShowModal(false);
 
   const handleShowEditModal = (product) => {
-    setSelectedProduct({ ...product }); // Copie pour éviter la modification directe
+    setSelectedProduct({ ...product });
     setShowEditModal(true);
   };
 
@@ -98,13 +109,20 @@ const Produits_tableau = ({ searchQuery }) => {
       <ToastContainer />
       <div
         className="table-responsive"
-        style={{ maxHeight: "450px", overflowY: "scroll", marginTop: "40px" }}
+        style={{
+          maxHeight: "450px",
+          overflowY: "scroll", 
+          marginTop: "40px",
+          scrollbarWidth: "none", /* Firefox */
+          msOverflowStyle: "none", /* Internet Explorer 10+ */
+        }}
       >
         <table className="table table-hover table-bordered shadow-sm rounded">
           <thead className="table-light sticky-top">
             <tr>
               <th scope="col">Product & Title</th>
               <th scope="col">Categories</th>
+              <th scope="col">Reviews Summary</th>
               <th scope="col">Action</th>
             </tr>
           </thead>
@@ -124,6 +142,7 @@ const Produits_tableau = ({ searchQuery }) => {
                   <p className="text-muted mb-0">{product.description_produit}</p>
                 </td>
                 <td>{product.catégorie}</td>
+                <td>{/* Vous pouvez ajouter un résumé des avis ici */}</td>
                 <td>
                   <div className="d-flex gap-2">
                     <button
@@ -140,7 +159,7 @@ const Produits_tableau = ({ searchQuery }) => {
                     </button>
                     <button
                       className="btn btn-sm btn-success"
-                      onClick={() => handleShowReviews(product.reviews || [])}
+                      onClick={() => handleShowReviews(product.id_produit)}
                     >
                       Reveal Reviews
                     </button>
@@ -152,7 +171,53 @@ const Produits_tableau = ({ searchQuery }) => {
         </table>
       </div>
 
-      {/* Modal pour l'édition */}
+      {/* Modal pour afficher les avis */}
+      {showModal && (
+        <div
+          className="modal fade show"
+          tabIndex="-1"
+          style={{ display: "block" }}
+          aria-labelledby="reviewsModal"
+          aria-hidden="false"
+        >
+          <div className="modal-dialog">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Avis pour {selectedProduct?.nom_produit}</h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={handleCloseModal}
+                ></button>
+              </div>
+              <div className="modal-body">
+                <ul className="list-unstyled">
+                  {selectedProductReviews.length > 0 ? (
+                    selectedProductReviews.map((review) => (
+                      <li key={review.id_review}>
+                        <p>{review.content}</p> {/* Affichage uniquement du contenu */}
+                      </li>
+                    ))
+                  ) : (
+                    <li>Aucun avis disponible.</li> // Si aucun avis n'est trouvé
+                  )}
+                </ul>
+              </div>
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={handleCloseModal}
+                >
+                  Fermer
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal pour l'édition du produit */}
       {showEditModal && selectedProduct && (
         <div
           className="modal fade show"
@@ -211,33 +276,14 @@ const Produits_tableau = ({ searchQuery }) => {
                       onChange={handleInputChange}
                     ></textarea>
                   </div>
-                  <div className="mb-3">
-                    <label>Image URL</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      name="image_produit"
-                      value={selectedProduct.image_produit}
-                      onChange={handleInputChange}
-                    />
-                  </div>
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={handleSaveChanges}
+                  >
+                    Sauvegarder les modifications
+                  </button>
                 </form>
-              </div>
-              <div className="modal-footer">
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  onClick={handleCloseEditModal}
-                >
-                  Close
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-primary"
-                  onClick={handleSaveChanges}
-                >
-                  Save Changes
-                </button>
               </div>
             </div>
           </div>

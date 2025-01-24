@@ -41,4 +41,17 @@ public class ProduitController {
         produitService.deleteProduit(id);
         return ResponseEntity.noContent().build();
     }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Produit> updateProduit(@PathVariable int id, @RequestBody Produit updatedProduit) {
+        Produit produit = produitService.getProduitById(id); // Vérifie si le produit existe
+        if (produit == null) {
+            return ResponseEntity.notFound().build();
+        }
+        updatedProduit.setId_produit(id); // S'assurer que l'ID reste le même
+        Produit savedProduit = produitService.updateProduit(updatedProduit);
+        return ResponseEntity.ok(savedProduit);
+    }
+
+
 }
