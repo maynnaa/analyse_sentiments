@@ -1,6 +1,8 @@
 package ma.formations.back.controller;
 
+import ma.formations.back.model.Produit;
 import ma.formations.back.model.Review;
+import ma.formations.back.service.ProduitService;
 import ma.formations.back.service.ReviewService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -15,6 +17,7 @@ import java.util.List;
 public class ReviewController {
 
     private final ReviewService reviewService;
+
 
     @Autowired
     public ReviewController(ReviewService reviewService) {
@@ -48,5 +51,9 @@ public class ReviewController {
         } else {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
+    }
+    @GetMapping("/produit/{id}")
+    public List<Review> getReviewsByProduitId(@PathVariable int id) {
+        return reviewService.getReviewsByProduitId(id);
     }
 }

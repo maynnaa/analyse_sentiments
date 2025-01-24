@@ -1,5 +1,6 @@
 package ma.formations.back.service;
 
+import ma.formations.back.model.Produit;
 import ma.formations.back.model.Review;
 import ma.formations.back.repository.ReviewRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,5 +33,8 @@ public class ReviewService {
 
     public void deleteById(int id) {
         reviewRepository.deleteById(id);
+    }
+    public List<Review> getReviewsByProduitId(int produitId) {
+        return reviewRepository.findReviewsByProduitId(produitId);
     }
 }
