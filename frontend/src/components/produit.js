@@ -5,11 +5,11 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 const Produits_tableau = ({ searchQuery }) => {
-  const [products, setProducts] = useState([]); // État pour stocker les produits
-  const [showModal, setShowModal] = useState(false); // État pour afficher/masquer le modal des avis
-  const [showEditModal, setShowEditModal] = useState(false); // État pour le modal d'édition
-  const [selectedProduct, setSelectedProduct] = useState(null); // Produit sélectionné
-  const [selectedProductReviews, setSelectedProductReviews] = useState([]); // Avis du produit sélectionné
+  const [products, setProducts] = useState([]); // State to store products
+  const [showEditModal, setShowEditModal] = useState(false); // State for edit modal
+  const [selectedProduct, setSelectedProduct] = useState(null); // Selected product
+  const [reviews, setReviews] = useState([]); // State to store reviews
+  const [showReviewsModal, setShowReviewsModal] = useState(false); // State to toggle reviews view
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -34,24 +34,6 @@ const Produits_tableau = ({ searchQuery }) => {
       toast.error("Une erreur s'est produite lors de la suppression.");
     }
   };
-
-  const handleShowReviews = async (productId) => {
-    try {
-      const response = await axios.get(`http://localhost:8080/reviews/${productId}`);
-      if (Array.isArray(response.data)) {
-        setSelectedProductReviews(response.data); // Met à jour les avis du produit sélectionné
-      } else {
-        console.warn("Les avis retournés ne sont pas sous forme de tableau");
-        setSelectedProductReviews([]);
-      }
-      setShowModal(true); // Affiche le modal des avis
-    } catch (error) {
-      console.error("Erreur lors de la récupération des avis:", error);
-      toast.error("Une erreur s'est produite lors de la récupération des avis.");
-    }
-  };
-
-  const handleCloseModal = () => setShowModal(false);
 
   const handleShowEditModal = (product) => {
     setSelectedProduct({ ...product });
@@ -92,6 +74,26 @@ const Produits_tableau = ({ searchQuery }) => {
     }
   };
 
+  // Récupérer les avis relatifs à un produit
+  const handleShowReviews = async (productId) => {
+    try {
+      const response = await axios.get(
+        `http://localhost:8080/reviews/produit/${productId}`
+      );
+      setReviews(response.data); // Mettre à jour les avis
+      setShowReviewsModal(true);
+    } catch (error) {
+      console.error("Erreur lors de la récupération des avis :", error);
+      toast.error("Impossible de charger les avis pour ce produit.");
+    }
+  };
+
+  // Fermer la modal des avis
+  const handleCloseReviewsModal = () => {
+    setShowReviewsModal(false);
+    setReviews([]); // Réinitialiser les avis lorsque la modal est fermée
+  };
+
   const filteredProducts = products.filter((product) => {
     const normalizedProductName = product.nom_produit
       .normalize("NFD")
@@ -111,7 +113,7 @@ const Produits_tableau = ({ searchQuery }) => {
         className="table-responsive"
         style={{
           maxHeight: "450px",
-          overflowY: "scroll", 
+          overflowY: "scroll",
           marginTop: "40px",
           scrollbarWidth: "none", /* Firefox */
           msOverflowStyle: "none", /* Internet Explorer 10+ */
@@ -142,7 +144,9 @@ const Produits_tableau = ({ searchQuery }) => {
                   <p className="text-muted mb-0">{product.description_produit}</p>
                 </td>
                 <td>{product.catégorie}</td>
-                <td>{/* Vous pouvez ajouter un résumé des avis ici */}</td>
+                <td>
+                  {/* Reviews summary placeholder, can be updated later */}
+                </td>
                 <td>
                   <div className="d-flex gap-2">
                     <button
@@ -171,8 +175,8 @@ const Produits_tableau = ({ searchQuery }) => {
         </table>
       </div>
 
-      {/* Modal pour afficher les avis */}
-      {showModal && (
+      {/* Modal for reviews */}
+      {showReviewsModal && (
         <div
           className="modal fade show"
           tabIndex="-1"
@@ -183,41 +187,32 @@ const Produits_tableau = ({ searchQuery }) => {
           <div className="modal-dialog">
             <div className="modal-content">
               <div className="modal-header">
-                <h5 className="modal-title">Avis pour {selectedProduct?.nom_produit}</h5>
+                <h5 className="modal-title">Avis du Produit</h5>
                 <button
                   type="button"
                   className="btn-close"
-                  onClick={handleCloseModal}
+                  onClick={handleCloseReviewsModal}
                 ></button>
               </div>
               <div className="modal-body">
-                <ul className="list-unstyled">
-                  {selectedProductReviews.length > 0 ? (
-                    selectedProductReviews.map((review) => (
+                {reviews.length > 0 ? (
+                  <ul>
+                    {reviews.map((review) => (
                       <li key={review.id_review}>
-                        <p>{review.content}</p> {/* Affichage uniquement du contenu */}
+                        <p>{review.content}</p> {/* Afficher uniquement le champ content */}
                       </li>
-                    ))
-                  ) : (
-                    <li>Aucun avis disponible.</li> // Si aucun avis n'est trouvé
-                  )}
-                </ul>
-              </div>
-              <div className="modal-footer">
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  onClick={handleCloseModal}
-                >
-                  Fermer
-                </button>
+                    ))}
+                  </ul>
+                ) : (
+                  <p>Aucun avis disponible pour ce produit.</p>
+                )}
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Modal pour l'édition du produit */}
+      {/* Edit Modal */}
       {showEditModal && selectedProduct && (
         <div
           className="modal fade show"
@@ -281,7 +276,7 @@ const Produits_tableau = ({ searchQuery }) => {
                     className="btn btn-primary"
                     onClick={handleSaveChanges}
                   >
-                    Sauvegarder les modifications
+                    Enregistrer
                   </button>
                 </form>
               </div>
