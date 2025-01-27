@@ -37,4 +37,15 @@ public class ReviewService {
     public List<Review> getReviewsByProduitId(int produitId) {
         return reviewRepository.findReviewsByProduitId(produitId);
     }
+
+    public long countPositiveReviews() {
+        return reviewRepository.countBySentiment("positif");
+    }
+
+    public long countNeutralReviews() {
+        return reviewRepository.countBySentiment("neutre");
+    }
+
+    public long countNegativeReviews() {
+        return reviewRepository.countBySentiment("negatif");}
 }

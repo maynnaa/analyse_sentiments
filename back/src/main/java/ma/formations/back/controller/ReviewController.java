@@ -9,7 +9,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/reviews")
@@ -55,5 +57,24 @@ public class ReviewController {
     @GetMapping("/produit/{id}")
     public List<Review> getReviewsByProduitId(@PathVariable int id) {
         return reviewService.getReviewsByProduitId(id);
+    }
+
+
+    @GetMapping("/count/positive")
+    public ResponseEntity<Long> getPositiveReviewCount() {
+        long count = reviewService.countPositiveReviews();
+        return new ResponseEntity<>(count, HttpStatus.OK);
+    }
+
+    @GetMapping("/count/neutral")
+    public ResponseEntity<Long> getNeutralReviewCount() {
+        long count = reviewService.countNeutralReviews();
+        return new ResponseEntity<>(count, HttpStatus.OK);
+    }
+
+    @GetMapping("/count/negative")
+    public ResponseEntity<Long> getNegativeReviewCount() {
+        long count = reviewService.countNegativeReviews();
+        return new ResponseEntity<>(count, HttpStatus.OK);
     }
 }

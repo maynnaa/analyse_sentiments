@@ -1,8 +1,15 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 const Sidebar = () => {
+  const navigate = useNavigate(); // Hook for programmatic navigation
+
+  const handleLogout = () => {
+    // Handle logout logic here (e.g., clearing user data, tokens)
+    navigate('/'); // Redirect to the homepage
+  };
+
   return (
     <div className="d-flex flex-column justify-content-between" style={{ width: '250px', height: '100vh', backgroundColor: '#2c3e50', color: 'white', padding: '20px' }}>
       <div>
@@ -42,7 +49,7 @@ const Sidebar = () => {
       </div>
 
       <div>
-        <button className="btn btn-danger w-100 mt-4">Logout</button>
+        <button className="btn btn-danger w-100 mt-4" onClick={handleLogout}>Logout</button>
       </div>
     </div>
   );

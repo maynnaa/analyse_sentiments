@@ -9,7 +9,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/produits")
-@CrossOrigin(origins = "http://localhost:3000")
+@CrossOrigin(origins = "*")
 public class ProduitController {
 
     private final ProduitService produitService;
@@ -52,6 +52,8 @@ public class ProduitController {
         Produit savedProduit = produitService.updateProduit(updatedProduit);
         return ResponseEntity.ok(savedProduit);
     }
+
+
 
 
 }

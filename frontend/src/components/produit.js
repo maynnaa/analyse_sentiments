@@ -5,11 +5,12 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 const Produits_tableau = ({ searchQuery }) => {
-  const [products, setProducts] = useState([]); // State to store products
-  const [showEditModal, setShowEditModal] = useState(false); // State for edit modal
-  const [selectedProduct, setSelectedProduct] = useState(null); // Selected product
-  const [reviews, setReviews] = useState([]); // State to store reviews
-  const [showReviewsModal, setShowReviewsModal] = useState(false); // State to toggle reviews view
+  const [products, setProducts] = useState([]); // État pour les produits
+  const [showEditModal, setShowEditModal] = useState(false); // Modal d'édition
+  const [selectedProduct, setSelectedProduct] = useState(null); // Produit sélectionné
+  const [reviews, setReviews] = useState([]); // État pour les avis
+  const [reviewStats, setReviewStats] = useState({}); // Statistiques des avis
+  const [showReviewsModal, setShowReviewsModal] = useState(false); // Modal des avis
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -80,12 +81,44 @@ const Produits_tableau = ({ searchQuery }) => {
       const response = await axios.get(
         `http://localhost:8080/reviews/produit/${productId}`
       );
-      setReviews(response.data); // Mettre à jour les avis
+      const reviewsData = response.data;
+      setReviews(reviewsData);
+
       setShowReviewsModal(true);
     } catch (error) {
       console.error("Erreur lors de la récupération des avis :", error);
       toast.error("Impossible de charger les avis pour ce produit.");
     }
+  };
+
+  // Calcul des statistiques des avis
+  const calculateReviewStats = (reviews) => {
+    const totalReviews = reviews.length;
+    let positiveCount = 0;
+    let neutralCount = 0;
+    let negativeCount = 0;
+
+    reviews.forEach((review) => {
+      switch (review.sentiment) {
+        case "positif":
+          positiveCount++;
+          break;
+        case "neutre":
+          neutralCount++;
+          break;
+        case "negatif":
+          negativeCount++;
+          break;
+        default:
+          break;
+      }
+    });
+
+    return {
+      positive: totalReviews > 0 ? (positiveCount / totalReviews) * 100 : 0,
+      neutral: totalReviews > 0 ? (neutralCount / totalReviews) * 100 : 0,
+      negative: totalReviews > 0 ? (negativeCount / totalReviews) * 100 : 0,
+    };
   };
 
   // Fermer la modal des avis
@@ -105,6 +138,20 @@ const Produits_tableau = ({ searchQuery }) => {
       .toLowerCase();
     return normalizedProductName.includes(normalizedSearchQuery);
   });
+
+  // Calculer les statistiques pour chaque produit
+  useEffect(() => {
+    const stats = {};
+    products.forEach((product) => {
+      axios
+        .get(`http://localhost:8080/reviews/produit/${product.id_produit}`)
+        .then((response) => {
+          const reviewsData = response.data;
+          stats[product.id_produit] = calculateReviewStats(reviewsData);
+          setReviewStats({ ...stats });
+        });
+    });
+  }, [products]);
 
   return (
     <div className="container-fluid p-3">
@@ -145,7 +192,16 @@ const Produits_tableau = ({ searchQuery }) => {
                 </td>
                 <td>{product.catégorie}</td>
                 <td>
-                  {/* Reviews summary placeholder, can be updated later */}
+                  {/* Affichage des statistiques des avis */}
+                  {reviewStats[product.id_produit] ? (
+                    <>
+                      <p>Positif : {reviewStats[product.id_produit].positive.toFixed(1)}%</p>
+                      <p>Neutre : {reviewStats[product.id_produit].neutral.toFixed(1)}%</p>
+                      <p>Négatif : {reviewStats[product.id_produit].negative.toFixed(1)}%</p>
+                    </>
+                  ) : (
+                    <p>Aucun avis</p>
+                  )}
                 </td>
                 <td>
                   <div className="d-flex gap-2">
@@ -175,7 +231,7 @@ const Produits_tableau = ({ searchQuery }) => {
         </table>
       </div>
 
-      {/* Modal for reviews */}
+      {/* Modal pour afficher uniquement les contenus des avis */}
       {showReviewsModal && (
         <div
           className="modal fade show"
@@ -196,23 +252,32 @@ const Produits_tableau = ({ searchQuery }) => {
               </div>
               <div className="modal-body">
                 {reviews.length > 0 ? (
-                  <ul>
+                  <div>
                     {reviews.map((review) => (
-                      <li key={review.id_review}>
-                        <p>{review.content}</p> {/* Afficher uniquement le champ content */}
-                      </li>
+                      <div key={review.id_review} className="review-item mb-3">
+                        <p>{review.content}</p> {/* Afficher uniquement le contenu de l'avis */}
+                      </div>
                     ))}
-                  </ul>
+                  </div>
                 ) : (
                   <p>Aucun avis disponible pour ce produit.</p>
                 )}
+              </div>
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={handleCloseReviewsModal}
+                >
+                  Fermer
+                </button>
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Edit Modal */}
+      {/* Modal pour éditer un produit */}
       {showEditModal && selectedProduct && (
         <div
           className="modal fade show"
@@ -224,7 +289,7 @@ const Produits_tableau = ({ searchQuery }) => {
           <div className="modal-dialog">
             <div className="modal-content">
               <div className="modal-header">
-                <h5 className="modal-title">Modifier le produit</h5>
+                <h5 className="modal-title">Édition du Produit</h5>
                 <button
                   type="button"
                   className="btn-close"
@@ -232,53 +297,62 @@ const Produits_tableau = ({ searchQuery }) => {
                 ></button>
               </div>
               <div className="modal-body">
-                <form>
-                  <div className="mb-3">
-                    <label>ID Produit</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      value={selectedProduct.id_produit}
-                      readOnly
-                    />
-                  </div>
-                  <div className="mb-3">
-                    <label>Nom</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      name="nom_produit"
-                      value={selectedProduct.nom_produit}
-                      onChange={handleInputChange}
-                    />
-                  </div>
-                  <div className="mb-3">
-                    <label>Catégorie</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      name="catégorie"
-                      value={selectedProduct.catégorie}
-                      onChange={handleInputChange}
-                    />
-                  </div>
-                  <div className="mb-3">
-                    <label>Description</label>
-                    <textarea
-                      className="form-control"
-                      name="description_produit"
-                      value={selectedProduct.description_produit}
-                      onChange={handleInputChange}
-                    ></textarea>
-                  </div>
-                  <button
-                    type="button"
-                    className="btn btn-primary"
-                    onClick={handleSaveChanges}
-                  >
-                    Enregistrer
-                  </button>
-                </form>
+                <div className="mb-3">
+                  <label htmlFor="nom_produit" className="form-label">
+                    Nom du produit
+                  </label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    id="nom_produit"
+                    name="nom_produit"
+                    value={selectedProduct.nom_produit}
+                    onChange={handleInputChange}
+                  />
+                </div>
+                <div className="mb-3">
+                  <label htmlFor="description_produit" className="form-label">
+                    Description
+                  </label>
+                  <textarea
+                    className="form-control"
+                    id="description_produit"
+                    name="description_produit"
+                    rows="3"
+                    value={selectedProduct.description_produit}
+                    onChange={handleInputChange}
+                  ></textarea>
+                </div>
+                <div className="mb-3">
+                  <label htmlFor="catégorie" className="form-label">
+                    Catégorie
+                  </label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    id="catégorie"
+                    name="catégorie"
+                    value={selectedProduct.catégorie}
+                    onChange={handleInputChange}
+                  />
+                </div>
+                {/* Ajoutez d'autres champs à modifier si nécessaire */}
+              </div>
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={handleCloseEditModal}
+                >
+                  Annuler
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={handleSaveChanges}
+                >
+                  Sauvegarder
+                </button>
               </div>
             </div>
           </div>

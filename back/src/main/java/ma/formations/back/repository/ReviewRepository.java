@@ -12,4 +12,6 @@ import java.util.List;
 @Repository
 public interface ReviewRepository extends JpaRepository<Review, Integer> {
     @Query("SELECT r FROM Review r WHERE r.produit.id_produit = :produitId")
-    List<Review> findReviewsByProduitId(@Param("produitId") int produitId);}
+    List<Review> findReviewsByProduitId(@Param("produitId") int produitId);
+    long countBySentiment(String sentiment);
+}

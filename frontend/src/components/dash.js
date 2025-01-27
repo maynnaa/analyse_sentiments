@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
 import {
   Chart as ChartJS,
   ArcElement,
@@ -10,26 +11,59 @@ import {
   PointElement,
   Title,
 } from 'chart.js';
-import { Pie, Line } from 'react-chartjs-2'; // Changement de Doughnut à Pie
+import { Pie, Line } from 'react-chartjs-2';
 
-// Enregistrement des éléments nécessaires pour Chart.js
 ChartJS.register(ArcElement, Tooltip, Legend, LineElement, CategoryScale, LinearScale, PointElement, Title);
 
 const Dash = () => {
-  const totalReviews = 1000;
-  const positive = 600;
-  const neutral = 250;
-  const negative = 150;
+  const [reviewCounts, setReviewCounts] = useState({
+    positive: 0,
+    neutral: 0,
+    negative: 0,
+  });
 
-  const positivePercentage = ((positive / totalReviews) * 100).toFixed(1);
-  const neutralPercentage = ((neutral / totalReviews) * 100).toFixed(1);
-  const negativePercentage = ((negative / totalReviews) * 100).toFixed(1);
+  useEffect(() => {
+    const fetchReviewCounts = async () => {
+      try {
+        const positiveRes = await axios.get('http://localhost:8080/reviews/count/positive');
+        const neutralRes = await axios.get('http://localhost:8080/reviews/count/neutral');
+        const negativeRes = await axios.get('http://localhost:8080/reviews/count/negative');
+
+        console.log('Positive Reviews:', positiveRes.data);
+        console.log('Neutral Reviews:', neutralRes.data);
+        console.log('Negative Reviews:', negativeRes.data);
+
+        setReviewCounts({
+          positive: positiveRes.data,
+          neutral: neutralRes.data,
+          negative: negativeRes.data,
+        });
+      } catch (error) {
+        console.error('Error fetching review counts:', error);
+      }
+    };
+
+    fetchReviewCounts();
+  }, []);
+
+  const totalReviews =
+    reviewCounts.positive + reviewCounts.neutral + reviewCounts.negative;
+
+  const positivePercentage = totalReviews
+    ? ((reviewCounts.positive / totalReviews) * 100).toFixed(1)
+    : 0;
+  const neutralPercentage = totalReviews
+    ? ((reviewCounts.neutral / totalReviews) * 100).toFixed(1)
+    : 0;
+  const negativePercentage = totalReviews
+    ? ((reviewCounts.negative / totalReviews) * 100).toFixed(1)
+    : 0;
 
   const pieData = {
     labels: ['Positifs', 'Neutres', 'Négatifs'],
     datasets: [
       {
-        data: [positive, neutral, negative],
+        data: [reviewCounts.positive, reviewCounts.neutral, reviewCounts.negative],
         backgroundColor: ['#4CAF50', '#FFC107', '#F44336'],
         hoverBackgroundColor: ['#45A049', '#FFB300', '#E53935'],
         borderWidth: 3,
@@ -47,7 +81,6 @@ const Dash = () => {
     },
   };
 
-  // Données pour le graphique linéaire (évolution des avis)
   const lineData = {
     labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'],
     datasets: [
@@ -94,7 +127,7 @@ const Dash = () => {
         <div className="row">
           <div className="col-md-6">
             <div className="d-flex justify-content-center" style={{ height: '300px' }}>
-              <Pie data={pieData} options={pieOptions} /> {/* Remplacement de Doughnut par Pie */}
+              <Pie data={pieData} options={pieOptions} />
             </div>
             <ul className="list-group mt-4">
               <li className="list-group-item d-flex justify-content-between align-items-center">
@@ -112,7 +145,6 @@ const Dash = () => {
             </ul>
           </div>
 
-          {/* Graphique d'évolution sous le tableau */}
           <div className="col-md-6 mt-4">
             <h5 className="text-center mb-4">Évolution des avis</h5>
             <Line data={lineData} options={lineOptions} style={{ height: '200px', width: '100%' }} />
