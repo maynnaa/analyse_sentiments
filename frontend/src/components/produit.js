@@ -16,6 +16,7 @@ const Produits_tableau = ({ searchQuery }) => {
     const fetchProducts = async () => {
       try {
         const response = await axios.get("http://localhost:8080/produits");
+        console.log("Produits récupérés :", response.data);
         setProducts(response.data);
       } catch (error) {
         console.error("Erreur lors de la récupération des produits:", error);
@@ -24,17 +25,6 @@ const Produits_tableau = ({ searchQuery }) => {
 
     fetchProducts();
   }, []);
-
-  const handleDeleteProduct = async (id) => {
-    try {
-      await axios.delete(`http://localhost:8080/produits/${id}`);
-      setProducts(products.filter((product) => product.id_produit !== id));
-      toast.success("Produit supprimé avec succès!");
-    } catch (error) {
-      console.error("Erreur lors de la suppression du produit:", error);
-      toast.error("Une erreur s'est produite lors de la suppression.");
-    }
-  };
 
   const handleShowEditModal = (product) => {
     setSelectedProduct({ ...product });
@@ -162,16 +152,16 @@ const Produits_tableau = ({ searchQuery }) => {
           maxHeight: "450px",
           overflowY: "scroll",
           marginTop: "40px",
-          scrollbarWidth: "none", /* Firefox */
-          msOverflowStyle: "none", /* Internet Explorer 10+ */
+          scrollbarWidth: "none", 
+          msOverflowStyle: "none", 
         }}
       >
         <table className="table table-hover table-bordered shadow-sm rounded">
           <thead className="table-light sticky-top">
             <tr>
-              <th scope="col">Product & Title</th>
-              <th scope="col">Categories</th>
-              <th scope="col">Reviews Summary</th>
+              <th scope="col">Produit </th>
+              <th scope="col">Catégories</th>
+              <th scope="col">Statistique</th>
               <th scope="col">Action</th>
             </tr>
           </thead>
@@ -206,22 +196,16 @@ const Produits_tableau = ({ searchQuery }) => {
                 <td>
                   <div className="d-flex gap-2">
                     <button
-                      className="btn btn-sm btn-danger"
-                      onClick={() => handleDeleteProduct(product.id_produit)}
-                    >
-                      Delete
-                    </button>
-                    <button
                       className="btn btn-sm btn-secondary"
                       onClick={() => handleShowEditModal(product)}
                     >
-                      Edit
+                      Modifier
                     </button>
                     <button
                       className="btn btn-sm btn-success"
                       onClick={() => handleShowReviews(product.id_produit)}
                     >
-                      Reveal Reviews
+                      Afficher les avis
                     </button>
                   </div>
                 </td>
@@ -336,7 +320,19 @@ const Produits_tableau = ({ searchQuery }) => {
                     onChange={handleInputChange}
                   />
                 </div>
-                {/* Ajoutez d'autres champs à modifier si nécessaire */}
+                <div className="mb-3">
+                  <label htmlFor="image_produit" className="form-label">
+                    Image
+                  </label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    id="image_produit"
+                    name="image_produit"
+                    value={selectedProduct.image_produit}
+                    onChange={handleInputChange}
+                  />
+                </div>
               </div>
               <div className="modal-footer">
                 <button
@@ -351,7 +347,7 @@ const Produits_tableau = ({ searchQuery }) => {
                   className="btn btn-primary"
                   onClick={handleSaveChanges}
                 >
-                  Sauvegarder
+                  Sauvegarder les changements
                 </button>
               </div>
             </div>
